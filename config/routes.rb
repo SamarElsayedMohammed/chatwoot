@@ -598,6 +598,7 @@ Rails.application.routes.draw do
           delete :avatar, on: :member
         end
         resources :accounts, only: [:index, :create, :show, :update, :destroy] do
+          post 'levora/messenger-inboxes', to: 'levora_messenger_inboxes#create'
           resources :account_users, only: [:index, :create] do
             collection do
               delete :destroy
