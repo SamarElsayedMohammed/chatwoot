@@ -11,7 +11,7 @@ class Platform::Api::V1::LevoraMessengerInboxesController < PlatformController
     validate_request_id!
 
     @facebook_channel = @resource.facebook_pages.includes(:inbox).find_by(page_id: page_id)
-    @created = @facebook_channel.blank?
+    @created = false
 
     if @facebook_channel.blank?
       ActiveRecord::Base.transaction do
@@ -21,9 +21,15 @@ class Platform::Api::V1::LevoraMessengerInboxesController < PlatformController
           user_access_token: user_access_token
         )
         @inbox = @resource.inboxes.create!(name: inbox_name, channel: @facebook_channel)
+        @created = true
       end
     else
       @inbox = @facebook_channel.inbox
+
+      if @inbox.blank?
+        @inbox = @resource.inboxes.create!(name: inbox_name, channel: @facebook_channel)
+        @created = true
+      end
     end
 
     render json: response_body, status: @created ? :created : :ok

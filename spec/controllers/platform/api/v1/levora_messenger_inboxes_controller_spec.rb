@@ -55,6 +55,22 @@ RSpec.describe 'Platform Levora Messenger Inboxes API', type: :request do
       expect(account.facebook_pages.where(page_id: params[:page_id]).count).to eq(1)
     end
 
+    it 'creates an inbox for an existing Facebook channel without one' do
+      facebook_channel = account.facebook_pages.create!(
+        page_id: params[:page_id],
+        page_access_token: params[:page_access_token],
+        user_access_token: params[:user_access_token]
+      )
+
+      post endpoint, params: params, headers: headers, as: :json
+
+      expect(response).to have_http_status(:created)
+      expect(response.parsed_body).to include(
+        'remote_inbox_id' => facebook_channel.reload.inbox.id,
+        'status' => 'created'
+      )
+    end
+
     it 'rejects an invalid request id before creating a channel' do
       post endpoint, params: params.merge(request_id: 'invalid request id'), headers: headers, as: :json
 
