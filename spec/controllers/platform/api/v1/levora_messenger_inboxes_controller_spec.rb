@@ -20,17 +20,14 @@ RSpec.describe 'Platform Levora Messenger Inboxes API', type: :request do
   end
 
   it 'is unavailable while the explicit feature flag is disabled' do
+    allow(ENV).to receive(:fetch).with('LEVORA_MESSENGER_PROVISIONING_ENABLED', 'true').and_return('false')
     post endpoint, params: params, headers: headers, as: :json
 
     expect(response).to have_http_status(:not_found)
     expect(account.facebook_pages).to be_empty
   end
 
-  context 'when the explicit feature flag is enabled' do
-    before do
-      allow(ENV).to receive(:fetch).with('LEVORA_MESSENGER_PROVISIONING_ENABLED', 'false').and_return('true')
-    end
-
+  context 'when provisioning Messenger inbox' do
     it 'creates a Facebook channel and inbox without returning tokens' do
       post endpoint, params: params, headers: headers, as: :json
 
@@ -43,6 +40,26 @@ RSpec.describe 'Platform Levora Messenger Inboxes API', type: :request do
       expect(response.body).not_to include(params[:page_access_token], params[:user_access_token])
       expect(account.facebook_pages.find_by!(page_id: params[:page_id]).inbox).to be_present
     end
+
+    it 'auto-provisions workspace user and assigns them to the inbox when user_email is provided' do
+      user_params = params.merge(
+        user_email: 'workspace-owner@levora.ai',
+        user_name: 'Workspace Owner',
+        user_password: 'SecurePassword123!'
+      )
+
+      expect {
+        post endpoint, params: user_params, headers: headers, as: :json
+      }.to change(User, :count).by(1)
+
+      expect(response).to have_http_status(:created)
+      created_user = User.find_by!(email: 'workspace-owner@levora.ai')
+      expect(account.administrators).to include(created_user)
+
+      inbox = account.facebook_pages.find_by!(page_id: params[:page_id]).inbox
+      expect(inbox.inbox_members.map(&:user_id)).to include(created_user.id)
+    end
+
 
     it 'returns the existing inbox on a duplicate page request' do
       post endpoint, params: params, headers: headers, as: :json
