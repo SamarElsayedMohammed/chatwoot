@@ -9,6 +9,7 @@ RSpec.describe 'Platform Levora Instagram Inboxes API', type: :request do
       instagram_id: '17841400123456789',
       access_token: 'ig-access-token-test',
       inbox_name: 'Levora Instagram',
+      auth_source: 'instagram_login',
       request_id: 'connection:550e8400-e29b-41d4-a716-446655440000'
     }
   end
@@ -71,6 +72,13 @@ RSpec.describe 'Platform Levora Instagram Inboxes API', type: :request do
 
     it 'rejects an invalid request id before creating a channel' do
       post endpoint, params: params.merge(request_id: 'invalid request id'), headers: headers, as: :json
+
+      expect(response).to have_http_status(:bad_request)
+      expect(account.instagram_channels).to be_empty
+    end
+
+    it 'rejects a token that was not issued by Instagram Login' do
+      post endpoint, params: params.merge(auth_source: 'facebook_login'), headers: headers, as: :json
 
       expect(response).to have_http_status(:bad_request)
       expect(account.instagram_channels).to be_empty
