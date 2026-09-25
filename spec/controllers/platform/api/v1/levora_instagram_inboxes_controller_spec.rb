@@ -77,11 +77,18 @@ RSpec.describe 'Platform Levora Instagram Inboxes API', type: :request do
       expect(account.instagram_channels).to be_empty
     end
 
-    it 'rejects a token that was not issued by Instagram Login' do
-      post endpoint, params: params.merge(auth_source: 'facebook_login'), headers: headers, as: :json
+    it 'rejects a request with an unknown auth_source' do
+      post endpoint, params: params.merge(auth_source: 'unknown_provider'), headers: headers, as: :json
 
       expect(response).to have_http_status(:bad_request)
       expect(account.instagram_channels).to be_empty
+    end
+
+    it 'accepts a token issued via Facebook Login (facebook_login auth_source)' do
+      post endpoint, params: params.merge(auth_source: 'facebook_login'), headers: headers, as: :json
+
+      expect(response).to have_http_status(:created)
+      expect(account.instagram_channels.find_by!(instagram_id: params[:instagram_id]).inbox).to be_present
     end
   end
 

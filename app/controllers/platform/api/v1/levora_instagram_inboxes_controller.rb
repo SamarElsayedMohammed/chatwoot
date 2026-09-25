@@ -120,7 +120,10 @@ class Platform::Api::V1::LevoraInstagramInboxesController < PlatformController
   end
 
   def validate_instagram_login_token!
-    raise ActionController::BadRequest, 'Instagram Login credentials are required' unless params[:auth_source] == 'instagram_login'
+    valid_sources = %w[instagram_login facebook_login]
+    return if valid_sources.include?(params[:auth_source])
+
+    raise ActionController::BadRequest, 'Valid auth_source (instagram_login or facebook_login) is required'
   end
 
   def response_body
