@@ -5,19 +5,20 @@ class Platform::Api::V1::LevoraInstagramInboxesController < PlatformController
 
   def create
     instagram_id = required_string_param(:instagram_id, max_length: 255)
-    access_token = required_string_param(:access_token, max_length: 4096)
+    access_token = required_string_param(:access_token, max_length: 8192)
     inbox_name = required_string_param(:inbox_name, max_length: 255)
     validate_instagram_login_token!
     validate_request_id!
 
-    expires_at = params[:expires_at].present? ? Time.zone.parse(params[:expires_at].to_s) : 60.days.from_now
+    parsed_expiry = params[:expires_at].present? ? Time.zone.parse(params[:expires_at].to_s) : nil
+    expires_at = parsed_expiry.presence || 60.days.from_now
 
     @instagram_channel = @resource.instagram_channels.includes(:inbox).find_by(instagram_id: instagram_id)
     @created = false
 
-    ActiveRecord::Base.transaction do
-      setup_workspace_user if params[:user_email].present?
+    setup_workspace_user if params[:user_email].present?
 
+    ActiveRecord::Base.transaction do
       if @instagram_channel.blank?
         @instagram_channel = Channel::Instagram.create!(
           account: @resource,
@@ -67,6 +68,7 @@ class Platform::Api::V1::LevoraInstagramInboxesController < PlatformController
     return if ENV.fetch('LEVORA_INSTAGRAM_PROVISIONING_ENABLED', 'true') == 'true'
 
     render json: { error: 'Not found' }, status: :not_found
+    throw :abort
   end
 
   def setup_workspace_user
@@ -89,6 +91,9 @@ class Platform::Api::V1::LevoraInstagramInboxesController < PlatformController
     account_user.save!
 
     user
+  rescue StandardError => e
+    Rails.logger.warn "LevoraInstagramInboxesController: workspace user setup failed: #{e.message}"
+    nil
   end
 
   def assign_inbox_members
