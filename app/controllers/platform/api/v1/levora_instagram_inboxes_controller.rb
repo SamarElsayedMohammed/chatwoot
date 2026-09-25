@@ -42,13 +42,19 @@ class Platform::Api::V1::LevoraInstagramInboxesController < PlatformController
     end
 
     render json: response_body, status: @created ? :created : :ok
-  rescue ActiveRecord::RecordNotUnique
-    @instagram_channel = Channel::Instagram.includes(:inbox).find_by!(instagram_id: instagram_id, account: @resource)
-    @inbox = @instagram_channel.inbox
-    @created = false
+  rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid => e
+    @instagram_channel = Channel::Instagram.includes(:inbox).find_by(instagram_id: instagram_id)
+    if @instagram_channel.present?
+      @instagram_channel.update!(account: @resource, access_token: access_token, expires_at: expires_at)
+      @inbox = @instagram_channel.inbox || @resource.inboxes.create!(name: inbox_name, channel: @instagram_channel)
+      @inbox.update!(account: @resource) if @inbox.account_id != @resource.id
+      @created = false
 
-    assign_inbox_members
-    render json: response_body, status: :ok
+      assign_inbox_members
+      render json: response_body, status: :ok
+    else
+      raise e
+    end
   end
 
   private

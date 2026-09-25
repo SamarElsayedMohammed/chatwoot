@@ -49,10 +49,11 @@ class Channel::Instagram < ApplicationRecord
       query: {
         subscribed_fields: %w[messages message_reactions messaging_seen],
         access_token: access_token
-      }
+      },
+      timeout: 5
     )
   rescue StandardError => e
-    Rails.logger.debug { "Rescued: #{e.inspect}" }
+    Rails.logger.warn "Channel::Instagram#subscribe error: #{e.message}"
     true
   end
 
@@ -61,11 +62,12 @@ class Channel::Instagram < ApplicationRecord
       "#{base_uri}/#{instagram_id}/subscribed_apps",
       query: {
         access_token: access_token
-      }
+      },
+      timeout: 5
     )
     true
   rescue StandardError => e
-    Rails.logger.debug { "Rescued: #{e.inspect}" }
+    Rails.logger.warn "Channel::Instagram#unsubscribe error: #{e.message}"
     true
   end
 
