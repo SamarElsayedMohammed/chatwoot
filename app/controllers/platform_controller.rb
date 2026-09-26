@@ -24,7 +24,6 @@ class PlatformController < ActionController::API
     return if @platform_app.present?
 
     render json: { error: 'Invalid access_token' }, status: :unauthorized
-    throw :abort
   end
 
   def set_resource
@@ -36,6 +35,5 @@ class PlatformController < ActionController::API
     return if @platform_app&.platform_app_permissibles&.find_by(permissible: @resource)
 
     render json: { error: 'Non permissible resource' }, status: :unauthorized
-    throw :abort
   end
 end
