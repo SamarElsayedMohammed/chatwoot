@@ -600,6 +600,7 @@ Rails.application.routes.draw do
         resources :accounts, only: [:index, :create, :show, :update, :destroy] do
           post 'levora/messenger-inboxes', to: 'levora_messenger_inboxes#create'
           post 'levora/instagram-inboxes', to: 'levora_instagram_inboxes#create'
+          post 'levora/webhooks', to: 'levora_account_webhooks#create'
           resources :account_users, only: [:index, :create] do
             collection do
               delete :destroy
