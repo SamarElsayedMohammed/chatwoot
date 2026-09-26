@@ -37,14 +37,14 @@ class Platform::Api::V1::LevoraMessengerInboxesController < PlatformController
       set_avatar(page_id)
     end
 
-    render json: response_body, status: @created ? :created : :ok
+    render json: provisioning_payload, status: @created ? :created : :ok
   rescue ActiveRecord::RecordNotUnique
     @facebook_channel = @resource.facebook_pages.includes(:inbox).find_by!(page_id: page_id)
     @inbox = @facebook_channel.inbox
     @created = false
 
     assign_inbox_members
-    render json: response_body, status: :ok
+    render json: provisioning_payload, status: :ok
   end
 
   private
@@ -110,7 +110,7 @@ class Platform::Api::V1::LevoraMessengerInboxesController < PlatformController
     raise ActionController::BadRequest, 'Invalid request_id' unless request_id.match?(/\A[A-Za-z0-9._:-]+\z/)
   end
 
-  def response_body
+  def provisioning_payload
     {
       remote_account_id: @resource.id,
       remote_inbox_id: @inbox.id,

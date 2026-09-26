@@ -42,7 +42,7 @@ class Platform::Api::V1::LevoraInstagramInboxesController < PlatformController
       set_avatar(params[:avatar_url])
     end
 
-    render json: response_body, status: @created ? :created : :ok
+    render json: provisioning_payload, status: @created ? :created : :ok
   rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid => e
     @instagram_channel = Channel::Instagram.includes(:inbox).find_by(instagram_id: instagram_id)
     if @instagram_channel.present?
@@ -52,7 +52,7 @@ class Platform::Api::V1::LevoraInstagramInboxesController < PlatformController
       @created = false
 
       assign_inbox_members
-      render json: response_body, status: :ok
+      render json: provisioning_payload, status: :ok
     else
       raise e
     end
@@ -131,7 +131,7 @@ class Platform::Api::V1::LevoraInstagramInboxesController < PlatformController
     raise ActionController::BadRequest, 'Valid auth_source (instagram_login or facebook_login) is required'
   end
 
-  def response_body
+  def provisioning_payload
     {
       remote_account_id: @resource.id,
       remote_inbox_id: @inbox.id,
