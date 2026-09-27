@@ -61,6 +61,7 @@ Rails.application.routes.draw do
           resources :agents, only: [:index, :create, :update, :destroy] do
             post :bulk_create, on: :collection
           end
+          post 'levora/agents', to: 'levora_agents#create'
           namespace :captain do
             resource :preferences, only: [:show, :update]
             resources :assistants do
